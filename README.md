@@ -1,2 +1,0 @@
-# U2B-Takuma
-
