@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>U2B Такума — Админ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f8;min-height:100vh;color:#222}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#1a1a4e,#2d2d8e);color:#fff;padding:0 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px #0004}
+.header-left{padding:14px 0}
+.logo-sub{font-size:10px;opacity:.6;letter-spacing:2px}
+.logo-title{font-size:18px;font-weight:900}
+.header-badge{background:#ffd700;color:#1a1a4e;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8e8f0;display:flex;z-index:50;box-shadow:0 -2px 12px #0001}
+.nav-btn{flex:1;padding:10px 4px 8px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s}
+.nav-btn.active{color:#1a1a4e}
+.nav-btn.inactive{color:#aaa}
+.nav-icon{font-size:22px}
+.nav-label{font-size:10px;font-weight:600}
+
+/* SCREENS */
+.screen{display:none;padding:16px 16px 80px}
+.screen.active{display:block}
+
+/* CARDS */
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px #0001}
+
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px #0001;display:flex;align-items:center;gap:12px}
+.stat-icon{font-size:28px}
+.stat-val{font-size:24px;font-weight:900;line-height:1}
+.stat-label{font-size:11px;color:#888;margin-top:2px}
+
+/* BUTTONS */
+.btn{padding:12px 20px;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn-primary{background:#1a1a4e;color:#fff;width:100%}
+.btn-success{background:#4caf50;color:#fff}
+.btn-danger{background:#e53935;color:#fff}
+.btn-ghost{background:#f0f0ff;color:#1a1a4e;border:1.5px solid #1a1a4e}
+
+/* ORDERS */
+.order-item{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px #0001;border-left:4px solid #e0e0e0}
+.order-item.new{border-left-color:#2196f3}
+.order-item.accepted{border-left-color:#4caf50}
+.order-item.sent{border-left-color:#ff9800}
+.order-num{font-weight:900;font-size:15px;color:#1a1a4e}
+.order-shop{font-size:13px;color:#444;margin-top:3px}
+.order-meta{font-size:11px;color:#aaa;margin-top:3px}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.status-new{background:#e3f2fd;color:#1565c0}
+.status-accepted{background:#e8f5e9;color:#2e7d32}
+.status-sent{background:#fff3e0;color:#e65100}
+.status-delivered{background:#f3e5f5;color:#6a1b9a}
+.status-cancelled{background:#fce4ec;color:#880e4f}
+
+.order-items-list{margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0}
+.order-product{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#555}
+
+/* STATUS SELECT */
+.status-select{border:1.5px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;outline:none;cursor:pointer;background:#fafafa}
+
+/* FILTER TABS */
+.filter-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px}
+.filter-tab{padding:6px 14px;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.filter-tab.active{background:#1a1a4e;color:#fff}
+.filter-tab.inactive{background:#e8e8f0;color:#666}
+
+/* SHOPS */
+.shop-item{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px #0001;display:flex;align-items:center;gap:12px}
+.shop-icon{font-size:28px;flex-shrink:0}
+.shop-info{flex:1}
+.shop-name{font-weight:700;font-size:14px}
+.shop-sub{font-size:12px;color:#888;margin-top:2px}
+.shop-actions{display:flex;gap:6px;flex-shrink:0}
+.icon-btn{width:34px;height:34px;border:none;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.icon-btn.edit{background:#e8e8ff;color:#1a1a4e}
+.icon-btn.del{background:#fce4ec;color:#e53935}
+
+/* FORM */
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;font-weight:700;color:#777;margin-bottom:4px}
+.field input,.field select{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;background:#fafafa;font-family:inherit;transition:border .15s}
+.field input:focus,.field select:focus{border-color:#1a1a4e;background:#fff}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:#0006;z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.modal-box{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:20px;max-height:85vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-title{font-weight:800;font-size:16px}
+.modal-close{background:#f0f0f0;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px}
+
+/* LOADING */
+.loading{text-align:center;padding:40px 20px;color:#aaa}
+.spinner{width:36px;height:36px;border:3px solid #e0e0e0;border-top-color:#1a1a4e;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.empty{text-align:center;padding:40px;color:#aaa;font-size:14px}
+.hidden{display:none!important}
+.section-title{font-size:13px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.divider{height:1px;background:#f0f0f0;margin:12px 0}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-sub">U2B · ТАКУМА</div>
+    <div class="logo-title" id="pageTitle">Главная</div>
+  </div>
+  <div class="header-badge">ADMIN</div>
+</div>
+
+<!-- ══ ГЛАВНАЯ ══ -->
+<div class="screen active" id="screen-home">
+  <br>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📦</div>
+      <div>
+        <div class="stat-val" id="statNew" style="color:#2196f3">—</div>
+        <div class="stat-label">Новых заказов</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div>
+        <div class="stat-val" id="statTotal" style="color:#4caf50">—</div>
+        <div class="stat-label">Всего заказов</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏪</div>
+      <div>
+        <div class="stat-val" id="statShops" style="color:#ff9800">—</div>
+        <div class="stat-label">Магазинов</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🚚</div>
+      <div>
+        <div class="stat-val" id="statSent" style="color:#9c27b0">—</div>
+        <div class="stat-label">Отправлено</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Быстрые ссылки -->
+  <div class="section-title">Быстрый доступ</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+    <a href="index.html" style="text-decoration:none">
+      <div style="background:#e8e8ff;border:2px solid #1a1a4e;border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:28px">📄</div>
+        <div style="font-weight:700;color:#1a1a4e;font-size:13px;margin-top:4px">Прайс</div>
+        <div style="font-size:11px;color:#888">для экспедитора</div>
+      </div>
+    </a>
+    <a href="u2b-takuma-order.html" style="text-decoration:none">
+      <div style="background:#e8f5e9;border:2px solid #4caf50;border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:28px">🛒</div>
+        <div style="font-weight:700;color:#2e7d32;font-size:13px;margin-top:4px">Заказ</div>
+        <div style="font-size:11px;color:#888">для клиентов</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Последние заказы -->
+  <div class="section-title">Последние заказы</div>
+  <div id="homeOrders">
+    <div class="loading"><div class="spinner"></div>Загрузка...</div>
+  </div>
+</div>
+
+<!-- ══ ЗАКАЗЫ ══ -->
+<div class="screen" id="screen-orders">
+  <br>
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="setOrderFilter('all',this)">Все</button>
+    <button class="filter-tab inactive" onclick="setOrderFilter('🆕 Новый',this)">🆕 Новые</button>
+    <button class="filter-tab inactive" onclick="setOrderFilter('✅ Принят',this)">✅ Принятые</button>
+    <button class="filter-tab inactive" onclick="setOrderFilter('🚚 Отправлен',this)">🚚 Отправленные</button>
+    <button class="filter-tab inactive" onclick="setOrderFilter('📦 Доставлен',this)">📦 Доставленные</button>
+  </div>
+  <div id="ordersList">
+    <div class="loading"><div class="spinner"></div>Загрузка заказов...</div>
+  </div>
+</div>
+
+<!-- ══ НАСТРОЙКИ ══ -->
+<div class="screen" id="screen-settings">
+  <br>
+  <div class="section-title">Управление магазинами</div>
+  <button class="btn btn-primary" onclick="openShopModal()" style="margin-bottom:16px">
+    + Добавить магазин
+  </button>
+  <div id="shopsList">
+    <div class="loading"><div class="spinner"></div>Загрузка магазинов...</div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-home" onclick="goScreen('home')">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Главная</span>
+  </button>
+  <button class="nav-btn inactive" id="nav-orders" onclick="goScreen('orders')">
+    <span class="nav-icon">📦</span>
+    <span class="nav-label">Заказы</span>
+  </button>
+  <button class="nav-btn inactive" id="nav-settings" onclick="goScreen('settings')">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">Настройки</span>
+  </button>
+</div>
+
+<!-- ══ МОДАЛКА: Магазин ══ -->
+<div class="modal-bg hidden" id="shopModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="shopModalTitle">Добавить магазин</div>
+      <button class="modal-close" onclick="closeModal('shopModal')">×</button>
+    </div>
+    <input type="hidden" id="editShopIdx" value="-1"/>
+    <div class="field">
+      <label>Название магазина *</label>
+      <input type="text" id="shopNameInput" placeholder="Магазин Айгерим"/>
+    </div>
+    <div class="field">
+      <label>Район</label>
+      <select id="shopDistrictInput">
+        <option value="">— выберите —</option>
+        <option>Жайылма</option>
+        <option>Шолаккорган</option>
+        <option>Ордабасы</option>
+        <option>Байдибек</option>
+        <option>Отырар</option>
+        <option>Сайрам</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Адрес *</label>
+      <input type="text" id="shopAddressInput" placeholder="ул. Абая 12, Шымкент"/>
+    </div>
+    <div class="field">
+      <label>Телефон *</label>
+      <input type="tel" id="shopPhoneInput" placeholder="+7 777 123 45 67"/>
+    </div>
+    <div class="field">
+      <label>Контактное лицо</label>
+      <input type="text" id="shopContactInput" placeholder="Имя"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('shopModal')">Отмена</button>
+      <button class="btn btn-success" style="flex:1" onclick="saveShop()">✅ Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ МОДАЛКА: Детали заказа ══ -->
+<div class="modal-bg hidden" id="orderModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="orderModalTitle">Заказ</div>
+      <button class="modal-close" onclick="closeModal('orderModal')">×</button>
+    </div>
+    <div id="orderModalContent"></div>
+  </div>
+</div>
+
+<script>
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbybpSsH6WRlGsxgS4y068J4ERQY9uZXYWrR-WjRdnh_rLbp1UMAAK8FtOn-XCZjAi4b/exec";
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let allOrders = [];
+let allShops  = [];
+let orderFilter = 'all';
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+const SCREENS = { home:'Главная', orders:'Заказы', settings:'Настройки' };
+
+function goScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => { b.className='nav-btn inactive'; });
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).className = 'nav-btn active';
+  document.getElementById('pageTitle').textContent = SCREENS[name];
+  window.scrollTo(0,0);
+
+  if (name === 'orders')   loadOrders();
+  if (name === 'settings') loadShops();
+  if (name === 'home')     loadHome();
+}
+
+// ─── LOAD HOME ───────────────────────────────────────────────────────────────
+async function loadHome() {
+  try {
+    const [ordersRes, shopsRes] = await Promise.all([
+      fetch(WEBAPP_URL + '?action=getOrders', { redirect: 'follow' }),
+      fetch(WEBAPP_URL + '?action=getShops', { redirect: 'follow' })
+    ]);
+    const ordersData = await ordersRes.json();
+    const shopsData  = await shopsRes.json();
+
+    if (ordersData.ok) {
+      allOrders = ordersData.orders || [];
+      const newCount  = allOrders.filter(o => o.status === '🆕 Новый').length;
+      const sentCount = allOrders.filter(o => o.status === '🚚 Отправлен').length;
+      // Group by order number
+      const orderNums = [...new Set(allOrders.map(o => o.orderNum))];
+      document.getElementById('statNew').textContent   = newCount;
+      document.getElementById('statTotal').textContent = orderNums.length;
+      document.getElementById('statSent').textContent  = sentCount;
+
+      // Last 5 orders
+      const last5 = orderNums.slice(0, 5);
+      const homeEl = document.getElementById('homeOrders');
+      if (last5.length === 0) {
+        homeEl.innerHTML = '<div class="empty">Заказов пока нет</div>';
+      } else {
+        homeEl.innerHTML = last5.map(num => renderOrderCard(num, true)).join('');
+      }
+    }
+
+    if (shopsData.ok) {
+      allShops = shopsData.shops || [];
+      document.getElementById('statShops').textContent = allShops.length;
+    }
+  } catch(e) {
+    document.getElementById('homeOrders').innerHTML = '<div class="empty">Нет соединения</div>';
+  }
+}
+
+// ─── LOAD ORDERS ─────────────────────────────────────────────────────────────
+async function loadOrders() {
+  const el = document.getElementById('ordersList');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Загрузка...</div>';
+  try {
+    const res = await fetch(WEBAPP_URL + '?action=getOrders', { redirect: 'follow' });
+    const data = await res.json();
+    if (data.ok) {
+      allOrders = data.orders || [];
+      renderOrders();
+    } else {
+      el.innerHTML = '<div class="empty">Ошибка загрузки</div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="empty">Нет соединения с Google Sheets</div>';
+  }
+}
+
+function renderOrders() {
+  const el = document.getElementById('ordersList');
+  const filtered = orderFilter === 'all'
+    ? allOrders
+    : allOrders.filter(o => o.status === orderFilter);
+
+  // Group by order number
+  const groups = {};
+  filtered.forEach(o => {
+    if (!groups[o.orderNum]) groups[o.orderNum] = [];
+    groups[o.orderNum].push(o);
+  });
+
+  const nums = Object.keys(groups);
+  if (nums.length === 0) {
+    el.innerHTML = '<div class="empty">Нет заказов</div>';
+    return;
+  }
+  el.innerHTML = nums.map(num => renderOrderCard(num, false, groups[num])).join('');
+}
+
+function renderOrderCard(num, mini, items) {
+  const orderItems = items || allOrders.filter(o => o.orderNum === num);
+  if (!orderItems.length) return '';
+  const first  = orderItems[0];
+  const fmtDate = (d) => {
+    if (!d) return '—';
+    if (String(d).includes('GMT')) {
+      try { return new Date(d).toLocaleDateString('ru-RU'); } catch(e) { return d; }
+    }
+    return d;
+  };
+  const status = first.status || '🆕 Новый';
+  const cls    = status.includes('Новый') ? 'new' : status.includes('Принят') ? 'accepted' : status.includes('Отправлен') ? 'sent' : '';
+  const badgeCls = status.includes('Новый') ? 'status-new' : status.includes('Принят') ? 'status-accepted' : status.includes('Отправлен') ? 'status-sent' : status.includes('Доставлен') ? 'status-delivered' : 'status-cancelled';
+  const totalQty = orderItems.reduce((s,o) => s + (parseInt(o.qty)||0), 0);
+
+  if (mini) {
+    return `<div class="order-item ${cls}" onclick="openOrderModal('${num}')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="order-num">${num}</div>
+          <div class="order-shop">🏪 ${first.shop}</div>
+          <div class="order-meta">${fmtDate(first.date)} · ${orderItems.length} позиц. · ${totalQty} шт.</div>
+        </div>
+        <span class="status-badge ${badgeCls}">${status}</span>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="order-item ${cls}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="order-num">${num}</div>
+        <div class="order-shop">🏪 ${first.shop}</div>
+        <div class="order-meta">${fmtDate(first.date)} · ${first.time || ''} · ${first.phone || ''}</div>
+        <div class="order-meta">${orderItems.length} позиц. · ${totalQty} шт.</div>
+      </div>
+      <select class="status-select" onchange="updateStatus('${num}', this.value)">
+        ${['🆕 Новый','✅ Принят','🚚 Отправлен','📦 Доставлен','❌ Отменён'].map(s =>
+          `<option ${s===status?'selected':''}>${s}</option>`
+        ).join('')}
+      </select>
+    </div>
+    <div class="order-items-list">
+      ${orderItems.map(o => `
+        <div class="order-product">
+          <span>${o.art} · ${o.app ? o.app.substring(0,40)+'...' : ''}</span>
+          <span style="font-weight:700">${o.qty} шт.</span>
+        </div>
+      `).join('')}
+    </div>
+    ${first.note ? `<div style="margin-top:8px;font-size:12px;color:#888;background:#f9f9f9;padding:6px 10px;border-radius:6px">💬 ${first.note}</div>` : ''}
+  </div>`;
+}
+
+function setOrderFilter(f, el) {
+  orderFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => { t.className='filter-tab inactive'; });
+  el.className = 'filter-tab active';
+  renderOrders();
+}
+
+async function updateStatus(orderNum, newStatus) {
+  try {
+    await fetch(WEBAPP_URL, {
+      method: 'POST', redirect: 'follow',
+      body: JSON.stringify({ action: 'updateStatus', orderNum, status: newStatus })
+    });
+    // Update local
+    allOrders.forEach(o => { if(o.orderNum === orderNum) o.status = newStatus; });
+  } catch(e) {
+    alert('Ошибка обновления статуса');
+  }
+}
+
+function openOrderModal(num) {
+  const items = allOrders.filter(o => o.orderNum === num);
+  if (!items.length) return;
+  const first = items[0];
+  document.getElementById('orderModalTitle').textContent = num;
+  document.getElementById('orderModalContent').innerHTML = `
+    <div style="background:#f0f0ff;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;color:#aaa;margin-bottom:4px">МАГАЗИН</div>
+      <div style="font-weight:700">${first.shop}</div>
+      <div style="font-size:12px;color:#888">${first.address || ''}</div>
+      <div style="font-size:12px;color:#888">${first.phone || ''} · ${first.contact || ''}</div>
+      <div style="font-size:12px;color:#888">${fmtDate(first.date)} ${first.time || ''}</div>
+    </div>
+    <div style="font-size:11px;color:#aaa;margin-bottom:8px">ТОВАРЫ</div>
+    ${items.map(o => `
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px">
+        <div>
+          <div style="font-weight:700">${o.art}</div>
+          <div style="font-size:11px;color:#aaa">${o.app || ''}</div>
+        </div>
+        <div style="font-weight:800;color:#1a1a4e">${o.qty} шт.</div>
+      </div>
+    `).join('')}
+    ${first.note ? `<div style="margin-top:10px;font-size:12px;color:#888;background:#f9f9f9;padding:8px 12px;border-radius:8px">💬 ${first.note}</div>` : ''}
+  `;
+  document.getElementById('orderModal').classList.remove('hidden');
+}
+
+// ─── SHOPS ───────────────────────────────────────────────────────────────────
+async function loadShops() {
+  const el = document.getElementById('shopsList');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Загрузка...</div>';
+  try {
+    const res = await fetch(WEBAPP_URL + '?action=getShops', { redirect: 'follow' });
+    const data = await res.json();
+    if (data.ok) {
+      allShops = data.shops || [];
+      renderShops();
+    } else {
+      el.innerHTML = '<div class="empty">Ошибка загрузки</div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="empty">Нет соединения</div>';
+  }
+}
+
+function renderShops() {
+  const el = document.getElementById('shopsList');
+  if (allShops.length === 0) {
+    el.innerHTML = '<div class="empty">Магазинов пока нет.<br>Нажмите + Добавить магазин</div>';
+    return;
+  }
+  el.innerHTML = allShops.map((s, i) => `
+    <div class="shop-item">
+      <div class="shop-icon">🏪</div>
+      <div class="shop-info">
+        <div class="shop-name">${s.name}</div>
+        <div class="shop-sub">${s.district ? s.district+' · ' : ''}${s.address}</div>
+        <div class="shop-sub">${s.phone} · ${s.contact || ''}</div>
+      </div>
+      <div class="shop-actions">
+        <button class="icon-btn edit" onclick="editShop(${i})">✏️</button>
+        <button class="icon-btn del" onclick="deleteShop(${i}, '${s.name}')">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openShopModal(editIdx) {
+  document.getElementById('shopModalTitle').textContent = editIdx !== undefined ? 'Редактировать' : 'Добавить магазин';
+  document.getElementById('editShopIdx').value = editIdx !== undefined ? editIdx : -1;
+  if (editIdx !== undefined) {
+    const s = allShops[editIdx];
+    document.getElementById('shopNameInput').value     = s.name;
+    document.getElementById('shopDistrictInput').value = s.district || '';
+    document.getElementById('shopAddressInput').value  = s.address;
+    document.getElementById('shopPhoneInput').value    = s.phone;
+    document.getElementById('shopContactInput').value  = s.contact || '';
+  } else {
+    document.getElementById('shopNameInput').value     = '';
+    document.getElementById('shopDistrictInput').value = '';
+    document.getElementById('shopAddressInput').value  = '';
+    document.getElementById('shopPhoneInput').value    = '';
+    document.getElementById('shopContactInput').value  = '';
+  }
+  document.getElementById('shopModal').classList.remove('hidden');
+}
+
+function editShop(idx) { openShopModal(idx); }
+
+async function saveShop() {
+  const name    = document.getElementById('shopNameInput').value.trim();
+  const address = document.getElementById('shopAddressInput').value.trim();
+  const phone   = document.getElementById('shopPhoneInput').value.trim();
+  if (!name || !address || !phone) { alert('Заполните обязательные поля'); return; }
+
+  const payload = {
+    action:   'addShop',
+    shopName: name,
+    district: document.getElementById('shopDistrictInput').value,
+    address,
+    phone,
+    contact:  document.getElementById('shopContactInput').value.trim()
+  };
+
+  try {
+    await fetch(WEBAPP_URL, { method:'POST', redirect:'follow', body: JSON.stringify(payload) });
+    closeModal('shopModal');
+    loadShops();
+  } catch(e) {
+    alert('Ошибка сохранения');
+  }
+}
+
+async function deleteShop(idx, name) {
+  if (!confirm(`Удалить магазин "${name}"?`)) return;
+  try {
+    await fetch(WEBAPP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'deleteShop', shopName: name })
+    });
+    loadShops();
+  } catch(e) {
+    alert('Ошибка удаления');
+  }
+}
+
+// ─── MODALS ──────────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', loadHome);
+</script>
+</body>
+</html>
