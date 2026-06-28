@@ -348,42 +348,100 @@ export default function OrderPage() {
 
 function SuccessScreen({ data, onNew }) {
   function downloadPDF() {
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    script.onload = () => {
-      const script2 = document.createElement('script');
-      script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
-      script2.onload = () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-        doc.setFillColor(26,26,78); doc.rect(0,0,210,28,'F');
-        doc.setTextColor(255,215,0); doc.setFontSize(16); doc.setFont('helvetica','bold');
-        doc.text('TAKUMA',12,12);
-        doc.setTextColor(255,255,255); doc.setFontSize(10);
-        doc.text('Накладная ' + data.orderNum, 12, 20);
-        doc.setTextColor(200,200,200); doc.setFontSize(9);
-        doc.text(data.date, 170, 12);
-        doc.setTextColor(50,50,50); doc.setFontSize(10); doc.setFont('helvetica','normal');
-        doc.text('Магазин: ' + data.shop.name, 12, 36);
-        doc.text('Адрес: ' + data.shop.address, 12, 42);
-        doc.text('Тел: ' + data.shop.phone, 12, 48);
-        let total = 0;
-        const rows = data.items.map((item,i) => {
-          const sum = item.sell * item.qty; total += sum;
-          return [i+1, item.art, (item.app||'').substring(0,45), item.qty, item.sell.toLocaleString('ru')+' ₸', sum.toLocaleString('ru')+' ₸'];
-        });
-        doc.autoTable({ startY:54, head:[['№','Артикул','Применимость','Кол-во','Цена','Сумма']], body:rows,
-          foot:[['','','','','ИТОГО:', total.toLocaleString('ru')+' ₸']],
-          styles:{fontSize:9,cellPadding:3},
-          headStyles:{fillColor:[26,26,78],textColor:[255,255,255],fontStyle:'bold'},
-          footStyles:{fillColor:[232,245,233],textColor:[27,94,32],fontStyle:'bold',fontSize:11},
-          columnStyles:{0:{cellWidth:8,halign:'center'},1:{cellWidth:28,fontStyle:'bold'},2:{cellWidth:80},3:{cellWidth:16,halign:'center'},4:{cellWidth:25,halign:'right'},5:{cellWidth:28,halign:'right',fontStyle:'bold'}}
-        });
-        doc.save('Накладная_' + data.orderNum + '.pdf');
-      };
-      document.head.appendChild(script2);
+    const canvas = document.createElement('canvas');
+    const scale = 2;
+    const W = 794;
+    const H = Math.max(1000, 220 + data.items.length * 34 + 150);
+    canvas.width = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    
+    // Background
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+    
+    // Header
+    ctx.fillStyle = '#1a1a4e'; ctx.fillRect(0, 0, W, 60);
+    ctx.fillStyle = '#ffd700'; ctx.font = 'bold 22px Arial';
+    ctx.fillText('TAKUMA', 20, 38);
+    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px Arial';
+    ctx.fillText('Накладная ' + data.orderNum, 130, 28);
+    ctx.fillStyle = '#cccccc'; ctx.font = '11px Arial';
+    ctx.fillText('Арслан: +7 707 422 30 08', 130, 46);
+    ctx.textAlign = 'right';
+    ctx.fillText(data.date, W - 20, 38);
+    ctx.textAlign = 'left';
+    
+    // Shop info
+    ctx.fillStyle = '#333'; ctx.font = 'bold 13px Arial';
+    ctx.fillText('Магазин: ' + data.shop.name, 20, 88);
+    ctx.font = '12px Arial'; ctx.fillStyle = '#666';
+    ctx.fillText('Адрес: ' + (data.shop.address||''), 20, 106);
+    ctx.fillText('Тел: ' + (data.shop.phone||''), 20, 122);
+    
+    // Table
+    const tY = 148;
+    const cols = [20, 50, 190, 490, 570, 670, W-20];
+    const headers = ['№', 'Артикул', 'Применимость', 'Кол', 'Цена', 'Сумма'];
+    ctx.fillStyle = '#1a1a4e'; ctx.fillRect(20, tY, W-40, 28);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Arial';
+    headers.forEach((h,i) => ctx.fillText(h, cols[i]+4, tY+18));
+    
+    data.items.forEach((item, idx) => {
+      const y = tY + 28 + idx * 30;
+      ctx.fillStyle = idx%2===0 ? '#fff' : '#f8f8ff';
+      ctx.fillRect(20, y, W-40, 30);
+      ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 0.5;
+      ctx.strokeRect(20, y, W-40, 30);
+      
+      ctx.fillStyle = '#999'; ctx.font = '10px Arial';
+      ctx.fillText(String(idx+1), cols[0]+8, y+19);
+      
+      ctx.fillStyle = '#1a1a4e'; ctx.font = 'bold 11px Arial';
+      ctx.fillText(item.art||'', cols[1]+4, y+19);
+      
+      ctx.fillStyle = '#555'; ctx.font = '10px Arial';
+      ctx.fillText((item.app||'').substring(0,42), cols[2]+4, y+19);
+      
+      ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+      ctx.fillText(String(item.qty||0), cols[3]+38, y+19);
+      
+      ctx.textAlign = 'right';
+      ctx.fillText((item.sell||0).toLocaleString('ru')+' ₸', cols[5]-4, y+19);
+      const sum = (item.sell||0)*(item.qty||0);
+      ctx.font = 'bold 11px Arial'; ctx.fillStyle = '#1a1a4e';
+      ctx.fillText(sum.toLocaleString('ru')+' ₸', W-24, y+19);
+      ctx.textAlign = 'left';
+    });
+    
+    // Total
+    const totY = tY + 28 + data.items.length * 30;
+    ctx.fillStyle = '#e8f5e9'; ctx.fillRect(20, totY, W-40, 36);
+    ctx.strokeStyle = '#4caf50'; ctx.lineWidth = 1;
+    ctx.strokeRect(20, totY, W-40, 36);
+    ctx.fillStyle = '#1b5e20'; ctx.font = 'bold 14px Arial';
+    ctx.fillText('ИТОГО:', cols[2]+4, totY+24);
+    ctx.textAlign = 'right'; ctx.font = 'bold 16px Arial';
+    ctx.fillText(data.total.toLocaleString('ru')+' ₸', W-24, totY+24);
+    ctx.textAlign = 'left';
+    
+    // Footer
+    ctx.fillStyle = '#aaa'; ctx.font = '10px Arial';
+    ctx.fillText('U2B · ТАКУМА · Арслан +7 707 422 30 08', 20, totY+60);
+    
+    // Export as PDF via jsPDF image
+    const imgData = canvas.toDataURL('image/png');
+    const loadJsPDF = () => {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[W, H] });
+      pdf.addImage(imgData, 'PNG', 0, 0, W, H);
+      pdf.save('Накладная_'+data.orderNum+'_'+(data.shop.name||'')+'.pdf');
     };
-    document.head.appendChild(script);
+    if (window.jspdf) { loadJsPDF(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = loadJsPDF;
+    document.head.appendChild(s);
   }
 
   return (
