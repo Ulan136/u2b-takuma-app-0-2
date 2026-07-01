@@ -125,6 +125,7 @@ export default function AdminPage() {
         <div style={{ display:'flex', gap:8 }}>
           <a href="/order" style={{ background:'#ffd700', color:'#1a1a4e', borderRadius:8, padding:'5px 10px', fontWeight:800, fontSize:12, textDecoration:'none' }}>🛒 Заказ</a>
           <a href="/warehouse" style={{ background:'#4caf50', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📦 Склад</a>
+          <a href="/invoice" style={{ background:'#ff9800', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📄 Накладная</a>
           <a href="/price" style={{ background:'#fff2', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📄 Прайс</a>
         </div>
       </div>
