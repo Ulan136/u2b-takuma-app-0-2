@@ -39,6 +39,63 @@ export default function PricePage() {
     return Math.ceil(b*(1+markup/100)/10)*10;
   }
 
+  function exportPDF(withBuyPrice=false) {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    script.onload = () => {
+      const s2 = document.createElement('script');
+      s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+      s2.onload = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+        const date = new Date().toLocaleDateString('ru-RU');
+        const title = withBuyPrice ? 'Прайс-лист (полный)' : 'Прайс-лист для клиентов';
+
+        // Header
+        doc.setFillColor(26,26,78);
+        doc.rect(0,0,297,18,'F');
+        doc.setTextColor(255,215,0); doc.setFontSize(13); doc.setFont('helvetica','bold');
+        doc.text('TAKUMA', 8, 12);
+        doc.setTextColor(255,255,255); doc.setFontSize(9);
+        doc.text(title, 40, 12);
+        doc.setTextColor(180,180,180); doc.setFontSize(8);
+        doc.text(`${filtered.length} позиций · Наценка ${markup}% · ${date}`, 200, 12);
+
+        const cols = withBuyPrice
+          ? ['#','Артикул','Закуп','Продажа','Применимость']
+          : ['#','Артикул','Цена','Применимость'];
+
+        const rows = filtered.map((p,i) => withBuyPrice
+          ? [i+1, p.art, (prices[p.art]?.buy||p.price||0).toLocaleString('ru')+' ₸',
+             sellPrice(p.art,p.price).toLocaleString('ru')+' ₸', p.app.substring(0,80)]
+          : [i+1, p.art, sellPrice(p.art,p.price).toLocaleString('ru')+' ₸', p.app.substring(0,100)]
+        );
+
+        const colW = withBuyPrice
+          ? [8,28,22,25,214]
+          : [8,28,25,236];
+
+        doc.autoTable({
+          startY:20, head:[cols], body:rows,
+          styles:{fontSize:7,cellPadding:2},
+          headStyles:{fillColor:[26,26,78],textColor:[255,255,255],fontStyle:'bold'},
+          columnStyles: withBuyPrice
+            ? {0:{cellWidth:8,halign:'center'},1:{fontStyle:'bold',cellWidth:28,textColor:[26,26,78]},2:{cellWidth:22,halign:'right',textColor:[100,100,100]},3:{cellWidth:25,halign:'right',fontStyle:'bold',textColor:[26,120,26]},4:{cellWidth:214}}
+            : {0:{cellWidth:8,halign:'center'},1:{fontStyle:'bold',cellWidth:28,textColor:[26,26,78]},2:{cellWidth:25,halign:'right',fontStyle:'bold',textColor:[26,120,26]},3:{cellWidth:236}},
+          alternateRowStyles:{fillColor:[248,248,255]},
+        });
+
+        const fname = withBuyPrice
+          ? `TAKUMA_Прайс_полный_${date.replace(/\./g,'-')}.pdf`
+          : `TAKUMA_Прайс_клиент_${date.replace(/\./g,'-')}.pdf`;
+        doc.save(fname);
+      };
+      document.head.appendChild(s2);
+    };
+    if (window.jspdf) { script.onload(); return; }
+    document.head.appendChild(script);
+  }
+
   const filtered = products.filter(p=>{
     if(tab!=='all'&&p.category!==tab) return false;
     if(!search) return true;
@@ -70,6 +127,12 @@ export default function PricePage() {
             style={{width:60,padding:'4px 8px',border:'1.5px solid #ffd700',borderRadius:6,fontSize:15,fontWeight:700,textAlign:'center',background:'transparent',color:'#ffd700',outline:'none'}}/>
           <span style={{color:'#ffd700',fontWeight:700}}>%</span>
         </div>
+        <button onClick={()=>exportPDF(false)} style={{padding:'9px 16px',background:'#4caf50',color:'#fff',border:'none',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',gap:6}}>
+          📄 Прайс для клиентов
+        </button>
+        <button onClick={()=>exportPDF(true)} style={{padding:'9px 16px',background:'#ffd700',color:'#1a1a4e',border:'none',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',gap:6}}>
+          📊 Полный прайс
+        </button>
       </div>
 
       {/* Stats */}
