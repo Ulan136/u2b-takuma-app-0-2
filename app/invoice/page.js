@@ -165,8 +165,11 @@ export default function InvoicePage() {
               onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
               style={{ border: '2px dashed #1a1a4e', borderRadius: 12, padding: 40, textAlign: 'center', cursor: 'pointer', background: '#fff', transition: 'background .15s' }}>
               <div style={{ fontSize: 50, marginBottom: 10 }}>📄</div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a4e', marginBottom: 6 }}>Нажмите или перетащите PDF накладную</div>
-              <div style={{ fontSize: 12, color: '#aaa' }}>Накладная от Такума в формате PDF</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a4e', marginBottom: 6 }}>Нажмите — откроется проводник</div>
+              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>Выберите PDF накладную от Такума</div>
+              <div style={{ background: '#1a1a4e', color: '#fff', borderRadius: 10, padding: '10px 24px', display: 'inline-block', fontWeight: 700, fontSize: 14 }}>
+                📂 Открыть проводник
+              </div>
               <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }}
                 onChange={e => handleFile(e.target.files[0])}/>
             </div>

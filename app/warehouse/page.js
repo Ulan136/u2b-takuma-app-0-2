@@ -11,8 +11,29 @@ export default function WarehousePage() {
   const [filter, setFilter] = useState('all'); // all | low | empty | ok
   const [allowAllNeg, setAllowAllNeg] = useState(false);
   const [globalToggling, setGlobalToggling] = useState(false);
+  const [editingArt, setEditingArt] = useState(null);
+  const [editQty, setEditQty] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => { loadWarehouse(); }, []);
+
+  async function saveStock(art, newStock) {
+    setSaving(true);
+    try {
+      await fetch('/api/warehouse', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: 'adjustStock', art, stock: newStock })
+      });
+      setProducts(prev => prev.map(p => p.art === art ? {
+        ...p,
+        stock: newStock,
+        remaining: newStock - Number(p.reserved||0) - Number(p.sold||0)
+      } : p));
+    } catch(e) { console.error(e); }
+    setSaving(false);
+    setEditingArt(null);
+  }
 
   async function loadWarehouse() {
     setLoading(true);
@@ -79,7 +100,10 @@ export default function WarehousePage() {
           <div style={{ fontSize: 18, fontWeight: 900 }}>📦 Склад</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a href="/admin" style={{ background: '#fff2', color: '#fff', borderRadius: 8, padding: '5px 12px', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>← Админ</a>
+          <div style={{ display:'flex', gap:8 }}>
+          <a href="/invoice" style={{ background:'#ff9800', color:'#fff', borderRadius:8, padding:'5px 12px', fontSize:12, fontWeight:700, textDecoration:'none' }}>📄 Загрузить накладную</a>
+          <a href="/admin" style={{ background:'#fff2', color:'#fff', borderRadius:8, padding:'5px 12px', fontSize:12, fontWeight:700, textDecoration:'none' }}>← Админ</a>
+        </div>
         </div>
       </div>
 
@@ -162,7 +186,26 @@ export default function WarehousePage() {
                   <div style={{ fontWeight: 800, fontSize: 12, color: '#1a1a4e' }}>{p.art}</div>
                   <div style={{ fontSize: 18 }}>{CAT_ICONS[p.category] || '📦'}</div>
                   <div style={{ fontSize: 11, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.app}</div>
-                  <div style={{ textAlign: 'center', fontSize: 13, color: '#2196f3', fontWeight: 600 }}>{Number(p.stock || 0)}</div>
+                  {/* Приход — кликабельный */}
+                  <div style={{ textAlign: 'center' }}>
+                    {editingArt === p.art ? (
+                      <div style={{ display:'flex', alignItems:'center', gap:4, justifyContent:'center' }}>
+                        <input type="number" value={editQty} onChange={e => setEditQty(e.target.value)}
+                          autoFocus onKeyDown={e => { if(e.key==='Enter') saveStock(p.art, parseInt(editQty)||0); if(e.key==='Escape') setEditingArt(null); }}
+                          style={{ width:55, padding:'3px 6px', border:'2px solid #1a1a4e', borderRadius:6, fontSize:13, fontWeight:700, textAlign:'center', outline:'none' }}/>
+                        <button onClick={() => saveStock(p.art, parseInt(editQty)||0)} disabled={saving}
+                          style={{ padding:'3px 7px', border:'none', borderRadius:6, background:'#4caf50', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700 }}>✓</button>
+                        <button onClick={() => setEditingArt(null)}
+                          style={{ padding:'3px 7px', border:'none', borderRadius:6, background:'#f0f0f0', color:'#555', cursor:'pointer', fontSize:13 }}>✕</button>
+                      </div>
+                    ) : (
+                      <div onClick={() => { setEditingArt(p.art); setEditQty(String(Number(p.stock||0))); }}
+                        style={{ fontSize:13, color:'#2196f3', fontWeight:600, cursor:'pointer', padding:'2px 6px', borderRadius:6, border:'1px dashed transparent' }}
+                        title="Нажмите для редактирования">
+                        {Number(p.stock||0)} ✏️
+                      </div>
+                    )}
+                  </div>
                   <div style={{ textAlign: 'center', fontSize: 13, color: '#ff9800', fontWeight: 600 }}>{Number(p.reserved || 0)}</div>
                   <div style={{ textAlign: 'center', fontSize: 13, color: '#9c27b0', fontWeight: 600 }}>{Number(p.sold || 0)}</div>
                   <div style={{ textAlign: 'center' }}>
