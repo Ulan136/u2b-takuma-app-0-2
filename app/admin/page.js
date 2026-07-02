@@ -10,6 +10,11 @@ const STATUS_COLORS = {
 };
 
 export default function AdminPage() {
+  const [authed, setAuthed] = useState(false);
+  const [login, setLogin] = useState('');
+  const [pass, setPass] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [remember, setRemember] = useState(false);
   const [tab, setTab] = useState('home');
   const [orders, setOrders] = useState([]);
   const [shops, setShops] = useState([]);
@@ -31,7 +36,14 @@ export default function AdminPage() {
   const [seeding, setSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState(null);
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (sessionStorage.getItem('u2b_auth') === '1' || localStorage.getItem('u2b_auth') === '1') {
+        setAuthed(true);
+      }
+    }
+    loadAll();
+  }, []);
 
   async function seedProducts() {
     setSeeding(true); setSeedResult(null);
