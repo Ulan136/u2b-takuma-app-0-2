@@ -61,6 +61,23 @@ export default function AdminPage() {
     setEditExpVal('');
   }
 
+  function doLogin() {
+    if (login === '707 422 30 08' && pass === 'Ars1989') {
+      sessionStorage.setItem('u2b_auth', '1');
+      if (remember) localStorage.setItem('u2b_auth', '1');
+      setAuthed(true);
+      setAuthError('');
+    } else {
+      setAuthError('Неверный логин или пароль');
+    }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('u2b_auth');
+    localStorage.removeItem('u2b_auth');
+    setAuthed(false);
+  }
+
   async function loadAll() {
     setLoading(true);
     try {
@@ -148,6 +165,40 @@ export default function AdminPage() {
 
   const NAV = [{id:'home',icon:'🏠',label:'Главная'},{id:'orders',icon:'📦',label:'Заказы'},{id:'shops',icon:'🏪',label:'Магазины'},{id:'expenses',icon:'💸',label:'Расходы'},{id:'settings',icon:'⚙️',label:'Настройки'}];
 
+  if (!authed) return (
+    <div style={{ minHeight:'100vh', background:'linear-gradient(135deg,#1a1a4e,#2d2d8e)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Segoe UI',Arial,sans-serif" }}>
+      <div style={{ background:'#fff', borderRadius:20, padding:32, width:320, boxShadow:'0 8px 40px #0004' }}>
+        <div style={{ textAlign:'center', marginBottom:24 }}>
+          <div style={{ fontSize:36 }}>🔐</div>
+          <div style={{ fontWeight:900, fontSize:22, color:'#1a1a4e', marginTop:8 }}>U2B · ТАКУМА</div>
+          <div style={{ fontSize:13, color:'#888', marginTop:4 }}>Вход в систему</div>
+        </div>
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:12, color:'#555', marginBottom:4, fontWeight:600 }}>Логин</div>
+          <input value={login} onChange={e=>setLogin(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&doLogin()}
+            placeholder="Номер телефона"
+            style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #e0e0e0', borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box' }}/>
+        </div>
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:12, color:'#555', marginBottom:4, fontWeight:600 }}>Пароль</div>
+          <input type="password" value={pass} onChange={e=>setPass(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&doLogin()}
+            placeholder="Пароль"
+            style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #e0e0e0', borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box' }}/>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
+          <input type="checkbox" id="remember" checked={remember} onChange={e=>setRemember(e.target.checked)}/>
+          <label htmlFor="remember" style={{ fontSize:13, color:'#555', cursor:'pointer' }}>Запомнить меня</label>
+        </div>
+        {authError && <div style={{ background:'#fce4ec', color:'#c62828', borderRadius:8, padding:'8px 12px', fontSize:13, marginBottom:12 }}>⚠️ {authError}</div>}
+        <button onClick={doLogin} style={{ width:'100%', padding:13, background:'linear-gradient(135deg,#1a1a4e,#2d2d8e)', color:'#fff', border:'none', borderRadius:10, fontWeight:800, fontSize:15, cursor:'pointer' }}>
+          Войти
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ maxWidth:520, margin:'0 auto', minHeight:'100vh', background:'#f0f2f8', paddingBottom:70 }}>
       {/* Header */}
@@ -158,6 +209,7 @@ export default function AdminPage() {
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <a href="/order" style={{ background:'#ffd700', color:'#1a1a4e', borderRadius:8, padding:'5px 10px', fontWeight:800, fontSize:12, textDecoration:'none' }}>🛒 Заказ</a>
+          <button onClick={doLogout} style={{ background:'#ffffff22', color:'#fff', border:'none', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, cursor:'pointer' }}>🚪 Выйти</button>
           <a href="/warehouse" style={{ background:'#4caf50', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📦 Склад</a>
           <a href="/invoice" style={{ background:'#ff9800', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📄 Накладная</a>
           <a href="/price" style={{ background:'#fff2', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📄 Прайс</a>
