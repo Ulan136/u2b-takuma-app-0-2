@@ -49,103 +49,62 @@ export default function PricePage() {
 
   function exportPDF(withBuyPrice=false) {
     const date = new Date().toLocaleDateString('ru-RU');
-    const title = withBuyPrice ? 'Прайс-лист (полный)' : 'Прайс-лист для клиентов';
-    const rowH = 18;
-    const headerH = 28;
-    const colsW = withBuyPrice ? [10,32,22,24,209] : [10,32,26,229];
-    const totalW = 297; // A4 landscape mm -> px at 3.78px/mm
-    const scale = 3;
-    const W = Math.round(totalW * 3.78);
-    const H = Math.round((headerH + filtered.length * rowH + 20) * 3.78);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = W * scale;
-    canvas.height = H * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(scale, scale);
-
-    // Background
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, W, H);
-
-    // Header
-    ctx.fillStyle = '#1a1a4e';
-    ctx.fillRect(0, 0, W, headerH * 3.78);
-    ctx.fillStyle = '#ffd700';
-    ctx.font = `bold ${14 * 3.78}px Arial`;
-    ctx.fillText('TAKUMA', 10 * 3.78, 18 * 3.78);
-    ctx.fillStyle = '#fff';
-    ctx.font = `${10 * 3.78}px Arial`;
-    ctx.fillText(title, 80 * 3.78, 13 * 3.78);
-    ctx.fillStyle = '#aaa';
-    ctx.font = `${8 * 3.78}px Arial`;
-    ctx.fillText(`${filtered.length} позиций · Наценка ${markup}% · ${date}`, 80 * 3.78, 22 * 3.78);
-    ctx.textAlign = 'right';
-    ctx.fillText(date, (W - 10) * 3.78, 18 * 3.78);
-    ctx.textAlign = 'left';
-
-    // Table header
-    const tY = headerH * 3.78;
-    const tRowH = rowH * 3.78;
-    ctx.fillStyle = '#2d2d6e';
-    ctx.fillRect(0, tY, W * 3.78, tRowH * 0.9);
-
-    const colsX = [];
-    let cx = 5 * 3.78;
-    const hdrs = withBuyPrice
-      ? ['#','Артикул','Закуп','Продажа','Применимость']
-      : ['#','Артикул','Цена','Применимость'];
-    colsW.forEach((cw, i) => {
-      colsX.push(cx);
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold ${7 * 3.78}px Arial`;
-      ctx.fillText(hdrs[i], cx, tY + tRowH * 0.65);
-      cx += cw * 3.78;
-    });
-
-    // Rows
-    filtered.forEach((p, idx) => {
-      const y = tY + tRowH * (idx + 1);
-      ctx.fillStyle = idx % 2 === 0 ? '#fff' : '#f5f5ff';
-      ctx.fillRect(0, y, W * 3.78, tRowH);
-      ctx.strokeStyle = '#e8e8e8';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(0, y, W * 3.78, tRowH);
-
-      const sell = sellPrice(p.art, p.price);
-      const buy = prices[p.art]?.buy || p.price || 0;
-      const vals = withBuyPrice
-        ? [String(idx+1), p.art, buy.toLocaleString('ru')+' ₸', sell.toLocaleString('ru')+' ₸', (p.app||'').substring(0,90)]
-        : [String(idx+1), p.art, sell.toLocaleString('ru')+' ₸', (p.app||'').substring(0,100)];
-
-      vals.forEach((v, i) => {
-        ctx.fillStyle = i === 1 ? '#1a1a4e' : i === (withBuyPrice?3:2) ? '#1b5e20' : '#333';
-        ctx.font = i === 1 ? `bold ${7 * 3.78}px Arial` : `${7 * 3.78}px Arial`;
-        ctx.textAlign = i >= (withBuyPrice?2:2) && i <= (withBuyPrice?3:2) ? 'right' : 'left';
-        const x = ctx.textAlign === 'right'
-          ? colsX[i] + colsW[i] * 3.78 - 4
-          : colsX[i];
-        ctx.fillText(v, x, y + tRowH * 0.65);
-        ctx.textAlign = 'left';
-      });
-    });
-
-    // Export
-    const imgData = canvas.toDataURL('image/png');
-    const loadPDF = () => {
+    const doExport = () => {
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation:'landscape', unit:'px', format:[W * scale, H * scale] });
-      pdf.addImage(imgData, 'PNG', 0, 0, W * scale, H * scale);
+      const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+
+      // Header
+      doc.setFillColor(26,26,78);
+      doc.rect(0,0,297,16,'F');
+      doc.setTextColor(255,215,0); doc.setFontSize(13); doc.setFont('helvetica','bold');
+      doc.text('TAKUMA', 8, 11);
+      doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','normal');
+      doc.text(withBuyPrice ? 'Full price list' : 'Price list for clients', 38, 11);
+      doc.setTextColor(180,180,180); doc.setFontSize(7);
+      doc.text(`${filtered.length} items - Markup ${markup}% - ${date}`, 160, 11);
+
+      const head = withBuyPrice
+        ? [['#','Article','Buy','Sell','Compatibility']]
+        : [['#','Article','Price','Compatibility']];
+
+      const body = filtered.map((p,i) => {
+        const sell = sellPrice(p.art, p.price);
+        const buy = prices[p.art]?.buy || p.price || 0;
+        return withBuyPrice
+          ? [i+1, p.art, buy.toLocaleString('ru')+' T', sell.toLocaleString('ru')+' T', (p.app||'').substring(0,90)]
+          : [i+1, p.art, sell.toLocaleString('ru')+' T', (p.app||'').substring(0,100)];
+      });
+
+      const colW = withBuyPrice ? [8,28,20,22,219] : [8,28,24,237];
+
+      doc.autoTable({
+        startY: 18, head, body,
+        styles: { fontSize: 6.5, cellPadding: 1.5 },
+        headStyles: { fillColor:[26,26,78], textColor:[255,255,255], fontStyle:'bold' },
+        columnStyles: withBuyPrice
+          ? {0:{cellWidth:8,halign:'center'},1:{cellWidth:28,fontStyle:'bold'},2:{cellWidth:20,halign:'right'},3:{cellWidth:22,halign:'right'},4:{cellWidth:219}}
+          : {0:{cellWidth:8,halign:'center'},1:{cellWidth:28,fontStyle:'bold'},2:{cellWidth:24,halign:'right'},3:{cellWidth:237}},
+        alternateRowStyles: { fillColor:[248,248,255] },
+      });
+
       const fname = withBuyPrice
-        ? `TAKUMA_Прайс_полный_${date.replace(/\./g,'-')}.pdf`
-        : `TAKUMA_Прайс_клиент_${date.replace(/\./g,'-')}.pdf`;
-      pdf.save(fname);
+        ? `TAKUMA_price_full_${date.replace(/\./g,'-')}.pdf`
+        : `TAKUMA_price_client_${date.replace(/\./g,'-')}.pdf`;
+      doc.save(fname);
     };
-    if (window.jspdf) { loadPDF(); return; }
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    s.onload = loadPDF;
-    document.head.appendChild(s);
+
+    if (window.jspdf?.jsPDF && window.jspdf?.jsPDF.prototype.autoTable) {
+      doExport(); return;
+    }
+    const s1 = document.createElement('script');
+    s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s1.onload = () => {
+      const s2 = document.createElement('script');
+      s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+      s2.onload = doExport;
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
   }
 
   const filtered = products.filter(p=>{
