@@ -2,17 +2,18 @@ export const metadata = {
   title: 'U2B · ТАКУМА',
   description: 'Система управления фильтрами Такума',
   manifest: '/manifest.json',
-  themeColor: '#1a1a4e',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Такума',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#1a1a4e',
 }
 
 export default function RootLayout({ children }) {
@@ -20,7 +21,6 @@ export default function RootLayout({ children }) {
     <html lang="ru">
       <head>
         <link rel="manifest" href="/manifest.json"/>
-        <meta name="theme-color" content="#1a1a4e"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
         <meta name="apple-mobile-web-app-title" content="Такума"/>
