@@ -59,9 +59,11 @@ export default function PricePage() {
       doc.setTextColor(255,215,0); doc.setFontSize(13); doc.setFont('helvetica','bold');
       doc.text('TAKUMA', 8, 11);
       doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','normal');
-      doc.text(withBuyPrice ? 'Full price list' : 'Price list for clients', 38, 11);
+      doc.text(withBuyPrice ? 'Polnyy prays-list' : 'Prays-list dlya klientov', 38, 11);
       doc.setTextColor(180,180,180); doc.setFontSize(7);
-      doc.text(`${filtered.length} items - Markup ${markup}% - ${date}`, 160, 11);
+      doc.text(`${filtered.length} poz. - Nacenka ${markup}% - ${date}`, 130, 11);
+      doc.setTextColor(255,215,0); doc.setFontSize(7);
+      doc.text('Arslan: +7 707 422 30 08', 220, 11);
 
       const head = withBuyPrice
         ? [['#','Article','Buy','Sell','Compatibility']]
