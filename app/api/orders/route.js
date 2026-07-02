@@ -64,9 +64,32 @@ export async function POST(req) {
       return Response.json({ ok: true });
     }
 
-    // Delete order
+    // Delete order by orderNum
     if (action === 'deleteOrder') {
-      await sql`DELETE FROM orders WHERE id = ${body.id}`;
+      if (body.orderNum) {
+        await sql`DELETE FROM orders WHERE order_num = ${body.orderNum}`;
+      } else {
+        await sql`DELETE FROM orders WHERE id = ${body.id}`;
+      }
+      return Response.json({ ok: true });
+    }
+
+    // Update order items
+    if (action === 'updateItems') {
+      const { orderNum, items } = body;
+      // Delete all items for this order
+      await sql`DELETE FROM orders WHERE order_num = ${orderNum}`;
+      // Re-insert updated items
+      for (const item of items) {
+        if (item.qty > 0) {
+          await sql`
+            INSERT INTO orders(order_num, shop_name, district, address, phone, contact, art, category, app, qty, price, status)
+            VALUES(${orderNum}, ${item.shop_name||''}, ${item.district||''}, ${item.address||''}, 
+                   ${item.phone||''}, ${item.contact||''}, ${item.art}, ${item.category||''}, 
+                   ${item.app||''}, ${item.qty}, ${item.price}, ${item.status||'Новый'})
+          `;
+        }
+      }
       return Response.json({ ok: true });
     }
 

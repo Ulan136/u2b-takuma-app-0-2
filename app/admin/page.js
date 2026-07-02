@@ -561,9 +561,13 @@ function OrderCard({ g, onStatus, onDelete, expanded }) {
             <div style={{ fontSize:13, color:'#555', marginTop:2 }}>🏪 {g.first.shop_name}</div>
             <div style={{ fontSize:11, color:'#aaa' }}>{date} · {g.items.length} позиц. · {totalQty} шт. · {totalSum.toLocaleString('ru')} ₸</div>
           </div>
+          <a href={`/order-edit?num=${g.num}`} onClick={e=>e.stopPropagation()}
+            style={{ background:'#e8f0ff', color:'#1a1a4e', border:'none', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:13, fontWeight:700, marginRight:4, textDecoration:'none' }}>
+            ✏️
+          </a>
           <button onClick={e=>{e.stopPropagation();onDelete&&onDelete(g.first.id);}}
             style={{ background:'#fce4ec', color:'#e53935', border:'none', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:13, fontWeight:700, marginRight:6 }}>
-            X
+            🗑️
           </button>
           <select value={g.first.status} onClick={e=>e.stopPropagation()} onChange={e=>onStatus(g.num,e.target.value)}
             style={{ border:`1.5px solid ${sc.color}`, borderRadius:8, padding:'5px 8px', fontSize:11, fontWeight:700, color:sc.color, background:sc.bg, outline:'none', cursor:'pointer' }}>
