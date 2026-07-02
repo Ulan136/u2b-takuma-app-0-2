@@ -48,60 +48,104 @@ export default function PricePage() {
   }
 
   function exportPDF(withBuyPrice=false) {
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    script.onload = () => {
-      const s2 = document.createElement('script');
-      s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
-      s2.onload = () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-        const date = new Date().toLocaleDateString('ru-RU');
-        const title = withBuyPrice ? 'Прайс-лист (полный)' : 'Прайс-лист для клиентов';
+    const date = new Date().toLocaleDateString('ru-RU');
+    const title = withBuyPrice ? 'Прайс-лист (полный)' : 'Прайс-лист для клиентов';
+    const rowH = 18;
+    const headerH = 28;
+    const colsW = withBuyPrice ? [10,32,22,24,209] : [10,32,26,229];
+    const totalW = 297; // A4 landscape mm -> px at 3.78px/mm
+    const scale = 3;
+    const W = Math.round(totalW * 3.78);
+    const H = Math.round((headerH + filtered.length * rowH + 20) * 3.78);
 
-        // Header
-        doc.setFillColor(26,26,78);
-        doc.rect(0,0,297,18,'F');
-        doc.setTextColor(255,215,0); doc.setFontSize(13); doc.setFont('helvetica','bold');
-        doc.text('TAKUMA', 8, 12);
-        doc.setTextColor(255,255,255); doc.setFontSize(9);
-        doc.text(title, 40, 12);
-        doc.setTextColor(180,180,180); doc.setFontSize(8);
-        doc.text(`${filtered.length} позиций · Наценка ${markup}% · ${date}`, 200, 12);
+    const canvas = document.createElement('canvas');
+    canvas.width = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
 
-        const cols = withBuyPrice
-          ? ['#','Артикул','Закуп','Продажа','Применимость']
-          : ['#','Артикул','Цена','Применимость'];
+    // Background
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
 
-        const rows = filtered.map((p,i) => withBuyPrice
-          ? [i+1, p.art, (prices[p.art]?.buy||p.price||0).toLocaleString('ru')+' ₸',
-             sellPrice(p.art,p.price).toLocaleString('ru')+' ₸', p.app.substring(0,80)]
-          : [i+1, p.art, sellPrice(p.art,p.price).toLocaleString('ru')+' ₸', p.app.substring(0,100)]
-        );
+    // Header
+    ctx.fillStyle = '#1a1a4e';
+    ctx.fillRect(0, 0, W, headerH * 3.78);
+    ctx.fillStyle = '#ffd700';
+    ctx.font = `bold ${14 * 3.78}px Arial`;
+    ctx.fillText('TAKUMA', 10 * 3.78, 18 * 3.78);
+    ctx.fillStyle = '#fff';
+    ctx.font = `${10 * 3.78}px Arial`;
+    ctx.fillText(title, 80 * 3.78, 13 * 3.78);
+    ctx.fillStyle = '#aaa';
+    ctx.font = `${8 * 3.78}px Arial`;
+    ctx.fillText(`${filtered.length} позиций · Наценка ${markup}% · ${date}`, 80 * 3.78, 22 * 3.78);
+    ctx.textAlign = 'right';
+    ctx.fillText(date, (W - 10) * 3.78, 18 * 3.78);
+    ctx.textAlign = 'left';
 
-        const colW = withBuyPrice
-          ? [8,28,22,25,214]
-          : [8,28,25,236];
+    // Table header
+    const tY = headerH * 3.78;
+    const tRowH = rowH * 3.78;
+    ctx.fillStyle = '#2d2d6e';
+    ctx.fillRect(0, tY, W * 3.78, tRowH * 0.9);
 
-        doc.autoTable({
-          startY:20, head:[cols], body:rows,
-          styles:{fontSize:7,cellPadding:2},
-          headStyles:{fillColor:[26,26,78],textColor:[255,255,255],fontStyle:'bold'},
-          columnStyles: withBuyPrice
-            ? {0:{cellWidth:8,halign:'center'},1:{fontStyle:'bold',cellWidth:28,textColor:[26,26,78]},2:{cellWidth:22,halign:'right',textColor:[100,100,100]},3:{cellWidth:25,halign:'right',fontStyle:'bold',textColor:[26,120,26]},4:{cellWidth:214}}
-            : {0:{cellWidth:8,halign:'center'},1:{fontStyle:'bold',cellWidth:28,textColor:[26,26,78]},2:{cellWidth:25,halign:'right',fontStyle:'bold',textColor:[26,120,26]},3:{cellWidth:236}},
-          alternateRowStyles:{fillColor:[248,248,255]},
-        });
+    const colsX = [];
+    let cx = 5 * 3.78;
+    const hdrs = withBuyPrice
+      ? ['#','Артикул','Закуп','Продажа','Применимость']
+      : ['#','Артикул','Цена','Применимость'];
+    colsW.forEach((cw, i) => {
+      colsX.push(cx);
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${7 * 3.78}px Arial`;
+      ctx.fillText(hdrs[i], cx, tY + tRowH * 0.65);
+      cx += cw * 3.78;
+    });
 
-        const fname = withBuyPrice
-          ? `TAKUMA_Прайс_полный_${date.replace(/\./g,'-')}.pdf`
-          : `TAKUMA_Прайс_клиент_${date.replace(/\./g,'-')}.pdf`;
-        doc.save(fname);
-      };
-      document.head.appendChild(s2);
+    // Rows
+    filtered.forEach((p, idx) => {
+      const y = tY + tRowH * (idx + 1);
+      ctx.fillStyle = idx % 2 === 0 ? '#fff' : '#f5f5ff';
+      ctx.fillRect(0, y, W * 3.78, tRowH);
+      ctx.strokeStyle = '#e8e8e8';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(0, y, W * 3.78, tRowH);
+
+      const sell = sellPrice(p.art, p.price);
+      const buy = prices[p.art]?.buy || p.price || 0;
+      const vals = withBuyPrice
+        ? [String(idx+1), p.art, buy.toLocaleString('ru')+' ₸', sell.toLocaleString('ru')+' ₸', (p.app||'').substring(0,90)]
+        : [String(idx+1), p.art, sell.toLocaleString('ru')+' ₸', (p.app||'').substring(0,100)];
+
+      vals.forEach((v, i) => {
+        ctx.fillStyle = i === 1 ? '#1a1a4e' : i === (withBuyPrice?3:2) ? '#1b5e20' : '#333';
+        ctx.font = i === 1 ? `bold ${7 * 3.78}px Arial` : `${7 * 3.78}px Arial`;
+        ctx.textAlign = i >= (withBuyPrice?2:2) && i <= (withBuyPrice?3:2) ? 'right' : 'left';
+        const x = ctx.textAlign === 'right'
+          ? colsX[i] + colsW[i] * 3.78 - 4
+          : colsX[i];
+        ctx.fillText(v, x, y + tRowH * 0.65);
+        ctx.textAlign = 'left';
+      });
+    });
+
+    // Export
+    const imgData = canvas.toDataURL('image/png');
+    const loadPDF = () => {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation:'landscape', unit:'px', format:[W * scale, H * scale] });
+      pdf.addImage(imgData, 'PNG', 0, 0, W * scale, H * scale);
+      const fname = withBuyPrice
+        ? `TAKUMA_Прайс_полный_${date.replace(/\./g,'-')}.pdf`
+        : `TAKUMA_Прайс_клиент_${date.replace(/\./g,'-')}.pdf`;
+      pdf.save(fname);
     };
-    if (window.jspdf) { script.onload(); return; }
-    document.head.appendChild(script);
+    if (window.jspdf) { loadPDF(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = loadPDF;
+    document.head.appendChild(s);
   }
 
   const filtered = products.filter(p=>{
