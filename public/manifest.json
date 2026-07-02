@@ -1,0 +1,24 @@
+{
+  "name": "U2B Такума",
+  "short_name": "Такума",
+  "description": "Управление заказами фильтров Такума",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#1a1a4e",
+  "theme_color": "#1a1a4e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
