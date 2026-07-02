@@ -69,12 +69,35 @@ export default function PricePage() {
         ? [['#','Article','Buy','Sell','Compatibility']]
         : [['#','Article','Price','Compatibility']];
 
-      const body = filtered.map((p,i) => {
+      // Sort by category
+      const CAT_ORDER = ['Масляные','Воздушные','Салонные'];
+      const sorted = [...filtered].sort((a,b) => {
+        const ai = CAT_ORDER.indexOf(a.category);
+        const bi = CAT_ORDER.indexOf(b.category);
+        return ai - bi;
+      });
+
+      // Build rows with category headers
+      const body = [];
+      let lastCat = null;
+      let num = 0;
+      const CAT_ICONS = {'Масляные':'OIL FILTERS','Воздушные':'AIR FILTERS','Салонные':'CABIN FILTERS'};
+      sorted.forEach(p => {
+        if (p.category !== lastCat) {
+          // Category header row
+          body.push(withBuyPrice
+            ? [{ content: CAT_ICONS[p.category]||p.category, colSpan:5, styles:{fillColor:[26,26,78],textColor:[255,215,0],fontStyle:'bold',fontSize:9,halign:'center'} }]
+            : [{ content: CAT_ICONS[p.category]||p.category, colSpan:4, styles:{fillColor:[26,26,78],textColor:[255,215,0],fontStyle:'bold',fontSize:9,halign:'center'} }]
+          );
+          lastCat = p.category;
+        }
+        num++;
         const sell = sellPrice(p.art, p.price);
         const buy = prices[p.art]?.buy || p.price || 0;
-        return withBuyPrice
-          ? [i+1, p.art, buy.toLocaleString('ru')+' T', sell.toLocaleString('ru')+' T', (p.app||'').substring(0,90)]
-          : [i+1, p.art, sell.toLocaleString('ru')+' T', (p.app||'').substring(0,100)];
+        body.push(withBuyPrice
+          ? [num, p.art, buy.toLocaleString('ru')+' T', sell.toLocaleString('ru')+' T', (p.app||'').substring(0,90)]
+          : [num, p.art, sell.toLocaleString('ru')+' T', (p.app||'').substring(0,100)]
+        );
       });
 
       const colW = withBuyPrice ? [8,28,20,22,219] : [8,28,24,237];
