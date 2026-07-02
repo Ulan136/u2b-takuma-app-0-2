@@ -64,6 +64,12 @@ export async function POST(req) {
       return Response.json({ ok: true });
     }
 
+    // Delete order
+    if (action === 'deleteOrder') {
+      await sql`DELETE FROM orders WHERE id = ${body.id}`;
+      return Response.json({ ok: true });
+    }
+
     return Response.json({ ok: false, error: 'Unknown action' });
   } catch (e) {
     return Response.json({ ok: false, error: e.message }, { status: 500 });

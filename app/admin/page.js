@@ -31,6 +31,8 @@ export default function AdminPage() {
   const [expenseModal, setExpenseModal] = useState(false);
   const [newExpense, setNewExpense] = useState({ category:'⛽ Топливо', amount:'', comment:'' });
   const [newDistrict, setNewDistrict] = useState('');
+  const [editOrder, setEditOrder] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [expenseCategories, setExpenseCategories] = useState(['Аренда','Зарплата','Транспорт','Реклама','Прочее']);
   const [newExpCat, setNewExpCat] = useState('');
   const [editExpCat, setEditExpCat] = useState(null);
@@ -94,6 +96,20 @@ export default function AdminPage() {
       setSeedResult(data.ok ? `✅ Загружено ${data.count} товаров в Neon БД!` : `❌ ${data.error}`);
     } catch(e) { setSeedResult('❌ ' + e.message); }
     setSeeding(false);
+  }
+
+  async function deleteOrder(orderId) {
+    if (!confirm('Удалить заказ?')) return;
+    setDeletingId(orderId);
+    try {
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'deleteOrder', id: orderId })
+      });
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+    } catch(e) { console.error(e); }
+    setDeletingId(null);
   }
 
   function addExpCat() {
@@ -329,7 +345,7 @@ export default function AdminPage() {
 
             <div style={{ fontSize:13, fontWeight:700, color:'#888', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Последние заказы</div>
             {orderGroups.slice(0,5).map(g=>(
-              <OrderCard key={g.num} g={g} onStatus={updateStatus}/>
+              <OrderCard key={g.num} g={g} onStatus={updateStatus} onDelete={deleteOrder}/>
             ))}
             {orderGroups.length===0 && <div style={{ textAlign:'center', padding:40, color:'#aaa' }}>Заказов пока нет</div>}
           </div>
@@ -346,7 +362,7 @@ export default function AdminPage() {
                 </button>
               ))}
             </div>
-            {filteredGroups.map(g=><OrderCard key={g.num} g={g} onStatus={updateStatus} expanded/>)}
+            {filteredGroups.map(g=><OrderCard key={g.num} g={g} onStatus={updateStatus} onDelete={deleteOrder} expanded/>)}
             {filteredGroups.length===0 && <div style={{ textAlign:'center', padding:40, color:'#aaa' }}>Нет заказов</div>}
           </div>
         )}
@@ -529,7 +545,7 @@ export default function AdminPage() {
   );
 }
 
-function OrderCard({ g, onStatus, expanded }) {
+function OrderCard({ g, onStatus, onDelete, expanded }) {
   const [open, setOpen] = useState(expanded||false);
   const sc = STATUS_COLORS[g.first.status] || { bg:'#f5f5f5', color:'#666' };
   const totalQty = g.items.reduce((s,i)=>s+Number(i.qty),0);
@@ -545,6 +561,10 @@ function OrderCard({ g, onStatus, expanded }) {
             <div style={{ fontSize:13, color:'#555', marginTop:2 }}>🏪 {g.first.shop_name}</div>
             <div style={{ fontSize:11, color:'#aaa' }}>{date} · {g.items.length} позиц. · {totalQty} шт. · {totalSum.toLocaleString('ru')} ₸</div>
           </div>
+          <button onClick={e=>{e.stopPropagation();onDelete&&onDelete(g.first.id);}}
+            style={{ background:'#fce4ec', color:'#e53935', border:'none', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:13, fontWeight:700, marginRight:6 }}>
+            X
+          </button>
           <select value={g.first.status} onClick={e=>e.stopPropagation()} onChange={e=>onStatus(g.num,e.target.value)}
             style={{ border:`1.5px solid ${sc.color}`, borderRadius:8, padding:'5px 8px', fontSize:11, fontWeight:700, color:sc.color, background:sc.bg, outline:'none', cursor:'pointer' }}>
             {['Новый','Принят','Отправлен','Доставлен','Отменён'].map(s=><option key={s}>{s}</option>)}
