@@ -108,7 +108,14 @@ export default function PricePage() {
     if(tab!=='all'&&p.category!==tab) return false;
     if(!search) return true;
     const q=smartNorm(search);
-    return q.split(/\s+/).every(w=>p.art.toLowerCase().includes(w)||smartNorm(p.app).includes(w));
+    const appLow=(p.app||'').toLowerCase();
+    const appNorm=smartNorm(p.app);
+    const artLow=(p.art||'').toLowerCase();
+    return q.split(/\s+/).every(w=>
+      artLow.includes(w) ||
+      appNorm.includes(w) ||
+      appLow.includes(w)
+    );
   });
 
   const cats={'Масляные':0,'Воздушные':0,'Салонные':0};
