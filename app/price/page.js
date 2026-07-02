@@ -22,15 +22,23 @@ export default function PricePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Load prices and settings
     fetch('/api/prices').then(r=>r.json()).then(d=>{
       if(d.ok){setPrices(d.prices||{});setMarkup(d.markup||30);}
+    }).catch(()=>{});
+
+    // Load products from Neon DB
+    fetch('/api/products').then(r=>r.json()).then(d=>{
+      if(d.ok && d.products?.length>0) {
+        setProducts(d.products.map(p=>({
+          art: p.art,
+          category: p.category,
+          app: p.app,
+          price: p.price_buy || p.price || 0,
+        })));
+      }
       setLoading(false);
     }).catch(()=>setLoading(false));
-
-    // Load products from lib
-    import('/lib/products.js').catch(()=>{}).then(m=>{
-      if(m?.PRODUCTS) setProducts(m.PRODUCTS);
-    });
   },[]);
 
   function sellPrice(art, buy) {

@@ -41,11 +41,17 @@ export default function OrderPage() {
 
   useEffect(() => {
     // Load products
-    import('/lib/products.js').then(m => setProducts(m.PRODUCTS)).catch(() => {
-      fetch('/api/prices').then(r=>r.json()).then(d => {
-        if (d.ok) { setPrices(d.prices||{}); setMarkup(d.markup||30); }
-      });
-    });
+    // Load products from Neon DB
+    fetch('/api/products').then(r=>r.json()).then(d => {
+      if (d.ok && d.products?.length > 0) {
+        setProducts(d.products.map(p => ({
+          art: p.art,
+          category: p.category,
+          app: p.app,
+          price: p.price_buy || p.price || 0,
+        })));
+      }
+    }).catch(() => {});
 
     // Load settings + prices
     Promise.all([
@@ -348,99 +354,157 @@ export default function OrderPage() {
 
 function SuccessScreen({ data, onNew }) {
   function downloadPDF() {
+    // Canvas-based PDF — кириллица работает нативно
     const canvas = document.createElement('canvas');
     const scale = 2;
     const W = 794;
-    const H = Math.max(1000, 220 + data.items.length * 34 + 150);
+    const rowH = 36;
+    const headerH = 200;
+    const footerH = 80;
+    const H = headerH + data.items.length * rowH + footerH;
     canvas.width = W * scale;
     canvas.height = H * scale;
     const ctx = canvas.getContext('2d');
     ctx.scale(scale, scale);
-    
-    // Background
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
-    
-    // Header
-    ctx.fillStyle = '#1a1a4e'; ctx.fillRect(0, 0, W, 60);
-    ctx.fillStyle = '#ffd700'; ctx.font = 'bold 22px Arial';
+
+    // Фон
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+
+    // Шапка синяя
+    ctx.fillStyle = '#1a1a4e';
+    ctx.fillRect(0, 0, W, 60);
+
+    // TAKUMA
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 20px Arial';
     ctx.fillText('TAKUMA', 20, 38);
-    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px Arial';
+
+    // Накладная номер
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px Arial';
     ctx.fillText('Накладная ' + data.orderNum, 130, 28);
-    ctx.fillStyle = '#cccccc'; ctx.font = '11px Arial';
+    ctx.font = '11px Arial';
+    ctx.fillStyle = '#ccc';
     ctx.fillText('Арслан: +7 707 422 30 08', 130, 46);
     ctx.textAlign = 'right';
     ctx.fillText(data.date, W - 20, 38);
     ctx.textAlign = 'left';
-    
-    // Shop info
-    ctx.fillStyle = '#333'; ctx.font = 'bold 13px Arial';
-    ctx.fillText('Магазин: ' + data.shop.name, 20, 88);
-    ctx.font = '12px Arial'; ctx.fillStyle = '#666';
-    ctx.fillText('Адрес: ' + (data.shop.address||''), 20, 106);
-    ctx.fillText('Тел: ' + (data.shop.phone||''), 20, 122);
-    
-    // Table
-    const tY = 148;
-    const cols = [20, 50, 190, 490, 570, 670, W-20];
-    const headers = ['№', 'Артикул', 'Применимость', 'Кол', 'Цена', 'Сумма'];
-    ctx.fillStyle = '#1a1a4e'; ctx.fillRect(20, tY, W-40, 28);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Arial';
-    headers.forEach((h,i) => ctx.fillText(h, cols[i]+4, tY+18));
-    
+
+    // Инфо о магазине
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 13px Arial';
+    ctx.fillText('Магазин: ' + data.shop.name, 20, 84);
+    ctx.font = '12px Arial';
+    ctx.fillStyle = '#555';
+    ctx.fillText('Адрес: ' + (data.shop.address || ''), 20, 102);
+    ctx.fillText('Тел: ' + (data.shop.phone || ''), 20, 118);
+
+    // Разделитель
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(20, 130);
+    ctx.lineTo(W - 20, 130);
+    ctx.stroke();
+
+    // Заголовок таблицы
+    const tY = 140;
+    ctx.fillStyle = '#1a1a4e';
+    ctx.fillRect(20, tY, W - 40, 30);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px Arial';
+    const cols = [28, 55, 190, 500, 590, W - 25];
+    const hdrs = ['№', 'Артикул', 'Применимость', 'Кол-во', 'Цена', 'Сумма'];
+    const aligns = ['left','left','left','center','right','right'];
+    hdrs.forEach((h, i) => {
+      ctx.textAlign = aligns[i];
+      const x = aligns[i] === 'right' ? cols[i] : aligns[i] === 'center' ? (cols[i] + (cols[i+1]||cols[i]+80))/2 : cols[i];
+      ctx.fillText(h, x, tY + 20);
+    });
+
+    // Строки товаров
+    let total = 0;
     data.items.forEach((item, idx) => {
-      const y = tY + 28 + idx * 30;
-      ctx.fillStyle = idx%2===0 ? '#fff' : '#f8f8ff';
-      ctx.fillRect(20, y, W-40, 30);
-      ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 0.5;
-      ctx.strokeRect(20, y, W-40, 30);
-      
-      ctx.fillStyle = '#999'; ctx.font = '10px Arial';
-      ctx.fillText(String(idx+1), cols[0]+8, y+19);
-      
-      ctx.fillStyle = '#1a1a4e'; ctx.font = 'bold 11px Arial';
-      ctx.fillText(item.art||'', cols[1]+4, y+19);
-      
-      ctx.fillStyle = '#555'; ctx.font = '10px Arial';
-      ctx.fillText((item.app||'').substring(0,42), cols[2]+4, y+19);
-      
-      ctx.fillStyle = '#333'; ctx.textAlign = 'center';
-      ctx.fillText(String(item.qty||0), cols[3]+38, y+19);
-      
+      const y = tY + 30 + idx * rowH;
+      ctx.fillStyle = idx % 2 === 0 ? '#fff' : '#f8f8ff';
+      ctx.fillRect(20, y, W - 40, rowH);
+      ctx.strokeStyle = '#eee';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(20, y, W - 40, rowH);
+
+      const cy = y + rowH * 0.62;
+      const sum = (item.sell || 0) * (item.qty || 0);
+      total += sum;
+
+      ctx.fillStyle = '#999';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(String(idx + 1), cols[0], cy);
+
+      ctx.fillStyle = '#1a1a4e';
+      ctx.font = 'bold 11px Arial';
+      ctx.fillText(item.art || '', cols[1], cy);
+
+      ctx.fillStyle = '#444';
+      ctx.font = '10px Arial';
+      const appText = (item.app || '').substring(0, 44);
+      ctx.fillText(appText, cols[2], cy);
+
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(item.qty || 0) + ' шт', (cols[3] + cols[4]) / 2 - 10, cy);
+
       ctx.textAlign = 'right';
-      ctx.fillText((item.sell||0).toLocaleString('ru')+' ₸', cols[5]-4, y+19);
-      const sum = (item.sell||0)*(item.qty||0);
-      ctx.font = 'bold 11px Arial'; ctx.fillStyle = '#1a1a4e';
-      ctx.fillText(sum.toLocaleString('ru')+' ₸', W-24, y+19);
+      ctx.font = '11px Arial';
+      ctx.fillStyle = '#666';
+      ctx.fillText((item.sell || 0).toLocaleString('ru') + ' \u20B8', cols[4], cy);
+
+      ctx.font = 'bold 12px Arial';
+      ctx.fillStyle = '#1a1a4e';
+      ctx.fillText(sum.toLocaleString('ru') + ' \u20B8', cols[5], cy);
       ctx.textAlign = 'left';
     });
-    
-    // Total
-    const totY = tY + 28 + data.items.length * 30;
-    ctx.fillStyle = '#e8f5e9'; ctx.fillRect(20, totY, W-40, 36);
-    ctx.strokeStyle = '#4caf50'; ctx.lineWidth = 1;
-    ctx.strokeRect(20, totY, W-40, 36);
-    ctx.fillStyle = '#1b5e20'; ctx.font = 'bold 14px Arial';
-    ctx.fillText('ИТОГО:', cols[2]+4, totY+24);
-    ctx.textAlign = 'right'; ctx.font = 'bold 16px Arial';
-    ctx.fillText(data.total.toLocaleString('ru')+' ₸', W-24, totY+24);
+
+    // Итого
+    const totY = tY + 30 + data.items.length * rowH;
+    ctx.fillStyle = '#e8f5e9';
+    ctx.fillRect(20, totY, W - 40, 40);
+    ctx.strokeStyle = '#4caf50';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(20, totY, W - 40, 40);
+
+    ctx.fillStyle = '#1b5e20';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText('ИТОГО:', cols[2], totY + 26);
+
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 18px Arial';
+    ctx.fillStyle = '#1a1a4e';
+    ctx.fillText(total.toLocaleString('ru') + ' \u20B8', cols[5], totY + 27);
     ctx.textAlign = 'left';
-    
-    // Footer
-    ctx.fillStyle = '#aaa'; ctx.font = '10px Arial';
-    ctx.fillText('U2B · ТАКУМА · Арслан +7 707 422 30 08', 20, totY+60);
-    
-    // Export as PDF via jsPDF image
+
+    // Подпись
+    ctx.fillStyle = '#aaa';
+    ctx.font = '9px Arial';
+    ctx.fillText('U2B \u00B7 ТАКУМА \u00B7 Арслан +7 707 422 30 08', 20, totY + 65);
+    ctx.textAlign = 'right';
+    ctx.fillText(data.date, W - 20, totY + 65);
+    ctx.textAlign = 'left';
+
+    // Генерация PDF
     const imgData = canvas.toDataURL('image/png');
-    const loadJsPDF = () => {
+    const loadPDF = () => {
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[W, H] });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [W, H] });
       pdf.addImage(imgData, 'PNG', 0, 0, W, H);
-      pdf.save('Накладная_'+data.orderNum+'_'+(data.shop.name||'')+'.pdf');
+      pdf.save('Накладная_' + data.orderNum + '_' + (data.shop.name || '') + '.pdf');
     };
-    if (window.jspdf) { loadJsPDF(); return; }
+    if (window.jspdf) { loadPDF(); return; }
     const s = document.createElement('script');
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    s.onload = loadJsPDF;
+    s.onload = loadPDF;
     document.head.appendChild(s);
   }
 
