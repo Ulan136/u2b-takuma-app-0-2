@@ -293,6 +293,17 @@ export default function InvoicePage() {
         )}
 
       </div>
+
+      {/* Кнопка назад для iPhone */}
+      <div style={{ position:'fixed', bottom:0, left:0, right:0, background:'#fff', borderTop:'1px solid #e0e0e0', padding:'8px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:100 }}>
+        <button onClick={()=>window.history.back()} style={{ background:'#f0f0f0', border:'none', borderRadius:10, padding:'10px 20px', fontWeight:700, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+          ← Назад
+        </button>
+        <button onClick={()=>window.scrollTo({top:0,behavior:'smooth'})} style={{ background:'#f0f0f0', border:'none', borderRadius:10, padding:'10px 20px', fontWeight:700, fontSize:14, cursor:'pointer' }}>
+          ↑ Вверх
+        </button>
+      </div>
+      <div style={{ height:60 }}/>
     </div>
   );
 }

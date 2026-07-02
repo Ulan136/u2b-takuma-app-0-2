@@ -16,6 +16,8 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState('');
   const [remember, setRemember] = useState(false);
   const [tab, setTab] = useState('home');
+  const [lastOrderNum, setLastOrderNum] = useState(0);
+  const [newOrderAlert, setNewOrderAlert] = useState(false);
   const [orders, setOrders] = useState([]);
   const [shops, setShops] = useState([]);
   const [settings, setSettings] = useState({ markup:30, districts:[], contact:'Арслан', phone:'+7 707 422 30 08' });
@@ -43,6 +45,42 @@ export default function AdminPage() {
       }
     }
     loadAll();
+
+    // Автообновление каждые 30 секунд
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        if (data.ok && data.orders?.length > 0) {
+          const maxNum = Math.max(...data.orders.map(o => o.num || 0));
+          setLastOrderNum(prev => {
+            if (prev > 0 && maxNum > prev) {
+              // Новый заказ! Играем звук
+              try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.4);
+              } catch(e) {}
+              setNewOrderAlert(true);
+              setTimeout(() => setNewOrderAlert(false), 5000);
+              setOrders(data.orders);
+            }
+            return maxNum;
+          });
+        }
+      } catch(e) {}
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   async function seedProducts() {
@@ -220,8 +258,6 @@ export default function AdminPage() {
           <div style={{ fontSize:18, fontWeight:900 }}>{NAV.find(n=>n.id===tab)?.label||'Главная'}</div>
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <a href="/order" style={{ background:'#ffd700', color:'#1a1a4e', borderRadius:8, padding:'5px 10px', fontWeight:800, fontSize:12, textDecoration:'none' }}>🛒 Заказ</a>
-          <button onClick={doLogout} style={{ background:'#ffffff22', color:'#fff', border:'none', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, cursor:'pointer' }}>🚪 Выйти</button>
           <a href="/warehouse" style={{ background:'#4caf50', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📦 Склад</a>
           <a href="/invoice" style={{ background:'#ff9800', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📄 Накладная</a>
           <a href="/price" style={{ background:'#fff2', color:'#fff', borderRadius:8, padding:'5px 10px', fontWeight:700, fontSize:12, textDecoration:'none' }}>📄 Прайс</a>
@@ -369,6 +405,13 @@ export default function AdminPage() {
                 <span style={{ fontSize:18, fontWeight:700, color:'#1a1a4e' }}>%</span>
                 <span style={{ fontSize:12, color:'#888' }}>→ автоматически в форме клиента</span>
               </div>
+            </div>
+
+            {/* Выйти */}
+            <div style={{ background:'#fff', borderRadius:12, padding:14, marginBottom:12, boxShadow:'0 1px 4px #0001' }}>
+              <button onClick={doLogout} style={{ width:'100%', padding:'12px', background:'#fce4ec', color:'#c62828', border:'none', borderRadius:10, fontWeight:800, fontSize:14, cursor:'pointer' }}>
+                🚪 Выйти из системы
+              </button>
             </div>
 
             {/* Seed products button */}
