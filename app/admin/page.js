@@ -188,7 +188,7 @@ export default function AdminPage() {
             </div>
 
             {/* Быстрые действия */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
               <a href="/order" style={{ textDecoration:'none' }}>
                 <div style={{ background:'linear-gradient(135deg,#ffd700,#ffb300)', borderRadius:12, padding:'14px 12px', display:'flex', alignItems:'center', gap:10 }}>
                   <span style={{ fontSize:26 }}>🛒</span>
@@ -207,6 +207,24 @@ export default function AdminPage() {
                   </div>
                 </div>
               </a>
+            </div>
+
+            {/* Ссылка для клиентов */}
+            <div style={{ background:'linear-gradient(135deg,#1a1a4e,#2d2d8e)', borderRadius:12, padding:'12px 14px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div>
+                <div style={{ fontWeight:800, fontSize:13, color:'#fff' }}>🔗 Ссылка для клиентов</div>
+                <div style={{ fontSize:11, color:'#aab', marginTop:2 }}>Отправь клиенту — он сделает заказ сам</div>
+              </div>
+              <button onClick={() => {
+                const url = window.location.origin + '/order';
+                navigator.clipboard.writeText(url).then(() => {
+                  alert('Ссылка скопирована!\n' + url);
+                }).catch(() => {
+                  prompt('Скопируй ссылку:', url);
+                });
+              }} style={{ background:'#ffd700', color:'#1a1a4e', border:'none', borderRadius:8, padding:'8px 14px', fontWeight:800, fontSize:13, cursor:'pointer', flexShrink:0 }}>
+                📋 Копировать
+              </button>
             </div>
 
             <div style={{ fontSize:13, fontWeight:700, color:'#888', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Последние заказы</div>
