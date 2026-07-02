@@ -143,9 +143,8 @@ export default function PricePage() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8,background:'#fff2',borderRadius:10,padding:'8px 14px'}}>
           <label style={{fontSize:12,opacity:.8}}>Наценка</label>
-          <input type="number" value={markup} onChange={e=>setMarkup(parseFloat(e.target.value)||0)}
-            style={{width:60,padding:'4px 8px',border:'1.5px solid #ffd700',borderRadius:6,fontSize:15,fontWeight:700,textAlign:'center',background:'transparent',color:'#ffd700',outline:'none'}}/>
-          <span style={{color:'#ffd700',fontWeight:700}}>%</span>
+          <span style={{color:'#ffd700',fontWeight:800,fontSize:15}}>{markup}%</span>
+          <span style={{fontSize:10,opacity:.6}}>(из склада)</span>
         </div>
         <button onClick={()=>exportPDF(false)} style={{padding:'9px 16px',background:'#4caf50',color:'#fff',border:'none',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:700}}>
           📄 Прайс для клиентов

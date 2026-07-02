@@ -11,11 +11,34 @@ export default function WarehousePage() {
   const [filter, setFilter] = useState('all'); // all | low | empty | ok
   const [allowAllNeg, setAllowAllNeg] = useState(false);
   const [globalToggling, setGlobalToggling] = useState(false);
+  const [markup, setMarkup] = useState(30);
+  const [markupSaving, setMarkupSaving] = useState(false);
+  const [markupSaved, setMarkupSaved] = useState(false);
   const [editingArt, setEditingArt] = useState(null);
   const [editQty, setEditQty] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadWarehouse(); }, []);
+  useEffect(() => {
+    loadWarehouse();
+    fetch('/api/settings').then(r=>r.json()).then(d=>{
+      if(d.ok) setMarkup(d.markup||30);
+    }).catch(()=>{});
+  }, []);
+
+  async function saveMarkup(val) {
+    setMarkupSaving(true);
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'updateMarkup', markup: val })
+      });
+      setMarkup(val);
+      setMarkupSaved(true);
+      setTimeout(() => setMarkupSaved(false), 2000);
+    } catch(e) { console.error(e); }
+    setMarkupSaving(false);
+  }
 
   async function saveStock(art, newStock) {
     setSaving(true);
@@ -123,6 +146,22 @@ export default function WarehousePage() {
               <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* Наценка */}
+        <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 4px #0001' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>💰 Наценка на все товары</div>
+            <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Изменится везде — прайс, заказ, накладная</div>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <input type="number" value={markup}
+              onChange={e => setMarkup(parseFloat(e.target.value)||0)}
+              onBlur={e => saveMarkup(parseFloat(e.target.value)||0)}
+              style={{ width:70, padding:'6px 10px', border:'2px solid #ffd700', borderRadius:8, fontSize:18, fontWeight:800, textAlign:'center', outline:'none' }}/>
+            <span style={{ fontWeight:800, fontSize:16 }}>%</span>
+            {markupSaved && <span style={{ color:'#4caf50', fontSize:12, fontWeight:700 }}>✅ Сохранено!</span>}
+          </div>
         </div>
 
         {/* Global toggle */}
