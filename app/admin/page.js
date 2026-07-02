@@ -24,8 +24,42 @@ export default function AdminPage() {
   const [expenseModal, setExpenseModal] = useState(false);
   const [newExpense, setNewExpense] = useState({ category:'⛽ Топливо', amount:'', comment:'' });
   const [newDistrict, setNewDistrict] = useState('');
+  const [expenseCategories, setExpenseCategories] = useState(['Аренда','Зарплата','Транспорт','Реклама','Прочее']);
+  const [newExpCat, setNewExpCat] = useState('');
+  const [editExpCat, setEditExpCat] = useState(null);
+  const [editExpVal, setEditExpVal] = useState('');
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState(null);
 
   useEffect(() => { loadAll(); }, []);
+
+  async function seedProducts() {
+    setSeeding(true); setSeedResult(null);
+    try {
+      const res = await fetch('/api/products', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'seedProducts', markup: settings.markup||30 })
+      });
+      const data = await res.json();
+      setSeedResult(data.ok ? `✅ Загружено ${data.count} товаров в Neon БД!` : `❌ ${data.error}`);
+    } catch(e) { setSeedResult('❌ ' + e.message); }
+    setSeeding(false);
+  }
+
+  function addExpCat() {
+    if (!newExpCat.trim()) return;
+    setExpenseCategories(prev => [...prev, newExpCat.trim()]);
+    setNewExpCat('');
+  }
+  function deleteExpCat(cat) {
+    setExpenseCategories(prev => prev.filter(c => c !== cat));
+  }
+  function saveExpCat(idx) {
+    if (!editExpVal.trim()) return;
+    setExpenseCategories(prev => prev.map((c,i) => i === idx ? editExpVal.trim() : c));
+    setEditExpCat(null);
+    setEditExpVal('');
+  }
 
   async function loadAll() {
     setLoading(true);
@@ -153,6 +187,28 @@ export default function AdminPage() {
               ))}
             </div>
 
+            {/* Быстрые действия */}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+              <a href="/order" style={{ textDecoration:'none' }}>
+                <div style={{ background:'linear-gradient(135deg,#ffd700,#ffb300)', borderRadius:12, padding:'14px 12px', display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontSize:26 }}>🛒</span>
+                  <div>
+                    <div style={{ fontWeight:800, fontSize:13, color:'#1a1a4e' }}>Новый заказ</div>
+                    <div style={{ fontSize:11, color:'#5a4a00' }}>Форма для клиента</div>
+                  </div>
+                </div>
+              </a>
+              <a href="/invoice" style={{ textDecoration:'none' }}>
+                <div style={{ background:'linear-gradient(135deg,#e8f5e9,#c8e6c9)', borderRadius:12, padding:'14px 12px', display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontSize:26 }}>📄</span>
+                  <div>
+                    <div style={{ fontWeight:800, fontSize:13, color:'#1a1a4e' }}>Загрузить накладную</div>
+                    <div style={{ fontSize:11, color:'#2e7d32' }}>Приход на склад</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+
             <div style={{ fontSize:13, fontWeight:700, color:'#888', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Последние заказы</div>
             {orderGroups.slice(0,5).map(g=>(
               <OrderCard key={g.num} g={g} onStatus={updateStatus}/>
@@ -233,6 +289,26 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Seed products button */}
+            <div style={{ background:'#fff', borderRadius:12, padding:16, marginBottom:12, boxShadow:'0 1px 4px #0001' }}>
+              <div style={{ fontWeight:700, marginBottom:6 }}>📦 Товары в базе данных</div>
+              <div style={{ fontSize:12, color:'#888', marginBottom:12 }}>
+                Загрузить все 222 товара Такума в Neon БД. Цена продажи рассчитается по текущей наценке ({settings.markup}%).
+              </div>
+              <button onClick={seedProducts} disabled={seeding}
+                style={{ padding:'12px 20px', background:seeding?'#aaa':'#1a1a4e', color:'#fff', border:'none', borderRadius:10, fontWeight:700, fontSize:14, cursor:seeding?'not-allowed':'pointer', width:'100%' }}>
+                {seeding ? '⏳ Загружаем 222 товара...' : '🚀 Загрузить все 222 товара в БД'}
+              </button>
+              {seedResult && (
+                <div style={{ marginTop:10, padding:'10px 14px',
+                  background:seedResult.startsWith('✅')?'#e8f5e9':'#fce4ec',
+                  borderRadius:8, fontSize:13, fontWeight:600,
+                  color:seedResult.startsWith('✅')?'#1b5e20':'#c62828' }}>
+                  {seedResult}
+                </div>
+              )}
+            </div>
+
             <div style={{ background:'#fff', borderRadius:12, padding:14, marginBottom:12, boxShadow:'0 1px 4px #0001' }}>
               <div style={{ fontWeight:700, marginBottom:10 }}>📍 Районы</div>
               {settings.districts?.map((d,i)=>(
@@ -245,6 +321,39 @@ export default function AdminPage() {
                 <input value={newDistrict} onChange={e=>setNewDistrict(e.target.value)} placeholder="Новый район"
                   style={{ flex:1, padding:'8px 12px', border:'1.5px solid #e0e0e0', borderRadius:8, fontSize:13, outline:'none' }}/>
                 <button onClick={addDistrict} style={{ padding:'8px 14px', background:'#1a1a4e', color:'#fff', border:'none', borderRadius:8, fontWeight:700, cursor:'pointer' }}>+</button>
+              </div>
+            </div>
+
+            {/* Категории расходов */}
+            <div style={{ background:'#fff', borderRadius:12, padding:14, marginBottom:12, boxShadow:'0 1px 4px #0001' }}>
+              <div style={{ fontWeight:700, marginBottom:10 }}>💸 Категории расходов</div>
+              {expenseCategories.map((cat, i) => (
+                <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid #f0f0f0' }}>
+                  {editExpCat === i ? (
+                    <div style={{ display:'flex', gap:6, flex:1 }}>
+                      <input value={editExpVal} onChange={e=>setEditExpVal(e.target.value)}
+                        onKeyDown={e=>e.key==='Enter'&&saveExpCat(i)}
+                        style={{ flex:1, padding:'4px 8px', border:'1.5px solid #1a1a4e', borderRadius:6, fontSize:13, outline:'none' }}/>
+                      <button onClick={()=>saveExpCat(i)} style={{ border:'none', background:'#1a1a4e', color:'#fff', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:12 }}>✓</button>
+                      <button onClick={()=>setEditExpCat(null)} style={{ border:'none', background:'#f0f0f0', color:'#555', borderRadius:6, padding:'4px 8px', cursor:'pointer', fontSize:12 }}>✕</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span style={{ fontSize:13 }}>{cat}</span>
+                      <div style={{ display:'flex', gap:6 }}>
+                        <button onClick={()=>{setEditExpCat(i);setEditExpVal(cat);}} style={{ border:'none', background:'#e8f0ff', color:'#1a1a4e', borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12 }}>✏️</button>
+                        <button onClick={()=>deleteExpCat(cat)} style={{ border:'none', background:'#fce4ec', color:'#e53935', borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12 }}>✕</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+              <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                <input value={newExpCat} onChange={e=>setNewExpCat(e.target.value)}
+                  onKeyDown={e=>e.key==='Enter'&&addExpCat()}
+                  placeholder="Новая категория..."
+                  style={{ flex:1, padding:'7px 10px', border:'1.5px solid #e0e0e0', borderRadius:8, fontSize:13, outline:'none' }}/>
+                <button onClick={addExpCat} style={{ padding:'7px 14px', background:'#1a1a4e', color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontWeight:700 }}>+</button>
               </div>
             </div>
 
