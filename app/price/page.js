@@ -176,7 +176,7 @@ export default function PricePage() {
         <div style={{flex:1,minWidth:220,padding:'10px 0'}}>
           <div style={{position:'relative'}}>
             <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.6,fontSize:16}}>🔍</span>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Поиск: toyota, бмв, камри..."
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Поиск: toyota, bmw, camry, hyundai, kia..."
               style={{width:'100%',padding:'10px 16px 10px 40px',border:'none',borderRadius:10,fontSize:14,background:'#fff2',color:'#fff',outline:'none',boxSizing:'border-box'}}/>
           </div>
         </div>
@@ -186,10 +186,10 @@ export default function PricePage() {
             style={{width:60,padding:'4px 8px',border:'1.5px solid #ffd700',borderRadius:6,fontSize:15,fontWeight:700,textAlign:'center',background:'transparent',color:'#ffd700',outline:'none'}}/>
           <span style={{color:'#ffd700',fontWeight:700}}>%</span>
         </div>
-        <button onClick={()=>exportPDF(false)} style={{padding:'9px 16px',background:'#4caf50',color:'#fff',border:'none',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',gap:6}}>
+        <button onClick={()=>exportPDF(false)} style={{padding:'9px 16px',background:'#4caf50',color:'#fff',border:'none',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:700}}>
           📄 Прайс для клиентов
         </button>
-        <button onClick={()=>exportPDF(true)} style={{padding:'9px 16px',background:'#ffd700',color:'#1a1a4e',border:'none',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',gap:6}}>
+        <button onClick={()=>exportPDF(true)} style={{padding:'9px 16px',background:'#ffd700',color:'#1a1a4e',border:'none',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:700}}>
           📊 Полный прайс
         </button>
       </div>
